@@ -31,6 +31,7 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY vectorize_floor ./vectorize_floor
 COPY webapp ./webapp
 COPY vectorize_floor.py ./vectorize_floor.py
+COPY run_server.py ./run_server.py
 
 # Prepare runtime dirs.
 RUN mkdir -p "$JOBS_DIR" && chown -R 1000:1000 /app
@@ -41,8 +42,8 @@ ENV PORT=8080
 EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD curl -fsS "http://127.0.0.1:${PORT}/healthz" || exit 1
+  CMD curl -fsS "http://127.0.0.1:${PORT:-8080}/healthz" || exit 1
 
 # Single worker keeps in-memory job state coherent.
-# For scaling, move job state to Redis and bump --workers.
-CMD ["sh", "-c", "uvicorn webapp.main:app --host 0.0.0.0 --port ${PORT} --workers 1"]
+# For scaling, move job state to Redis and bump WEB_CONCURRENCY.
+CMD ["python", "run_server.py"]
