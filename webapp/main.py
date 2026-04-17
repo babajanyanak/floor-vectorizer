@@ -94,6 +94,43 @@ def _validate_suffix(filename: str, allowed: set, kind: str) -> str:
     return suffix
 
 
+def _parse_optional_int(value: Optional[str], field_name: str) -> Optional[int]:
+    """Parse an HTML-form string field into Optional[int].
+
+    Treats empty strings and whitespace-only values as ``None`` — browsers
+    submit ``""`` for untouched ``<input type="number">`` fields, which is
+    not the same as "omitted".
+    """
+    if value is None:
+        return None
+    stripped = value.strip()
+    if not stripped:
+        return None
+    try:
+        return int(stripped)
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Field '{field_name}' must be an integer, got '{value}'.",
+        )
+
+
+def _parse_optional_float(value: Optional[str], field_name: str) -> Optional[float]:
+    """Parse an HTML-form string field into Optional[float]."""
+    if value is None:
+        return None
+    stripped = value.strip()
+    if not stripped:
+        return None
+    try:
+        return float(stripped)
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Field '{field_name}' must be a number, got '{value}'.",
+        )
+
+
 async def _save_upload(upload: UploadFile, dest: Path) -> None:
     size = 0
     dest.parent.mkdir(parents=True, exist_ok=True)
@@ -181,11 +218,14 @@ async def submit(
     floor_id: str = Form("floor"),
     ocr_fallback: Optional[str] = Form(None),
     debug: Optional[str] = Form(None),
-    closing_kernel: Optional[int] = Form(None),
-    simplify_tolerance: Optional[float] = Form(None),
+    closing_kernel: Optional[str] = Form(None),
+    simplify_tolerance: Optional[str] = Form(None),
 ):
     if not plan or not plan.filename:
         raise HTTPException(status_code=400, detail="Plan image is required.")
+
+    closing_kernel_val = _parse_optional_int(closing_kernel, "closing_kernel")
+    simplify_tolerance_val = _parse_optional_float(simplify_tolerance, "simplify_tolerance")
 
     job_id = uuid.uuid4().hex[:12]
     job_dir = _job_dir(job_id)
@@ -217,10 +257,10 @@ async def submit(
         ocr_fallback=bool(ocr_fallback),
         debug=bool(debug),
     )
-    if closing_kernel is not None:
-        cfg.closing_kernel_size = closing_kernel
-    if simplify_tolerance is not None:
-        cfg.simplify_tolerance = simplify_tolerance
+    if closing_kernel_val is not None:
+        cfg.closing_kernel_size = closing_kernel_val
+    if simplify_tolerance_val is not None:
+        cfg.simplify_tolerance = simplify_tolerance_val
 
     inputs = PipelineInputs(
         plan_path=plan_path,
