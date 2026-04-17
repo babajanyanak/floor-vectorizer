@@ -1,0 +1,10 @@
+opencv-python-headless==4.10.0.84
+numpy>=1.26,<2.2
+shapely>=2.0.4,<3.0
+pandas>=2.1,<3.0
+scikit-image>=0.22
+pytesseract>=0.3.10
+fastapi>=0.110,<0.120
+uvicorn[standard]>=0.29,<0.35
+python-multipart>=0.0.9
+jinja2>=3.1

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Загрузка плана этажа{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>Векторизация поэтажного плана</h1>
+  <p class="muted">
+    Загрузите изображение плана с цветной заливкой помещений.
+    На выходе получите <code>lots.svg</code>, <code>lots_preview.svg</code>,
+    <code>lots.json</code> и <code>validation_report.json</code>.
+  </p>
+
+  <form action="/" method="post" enctype="multipart/form-data" class="upload-form">
+    <div class="field">
+      <label for="plan">План этажа (PNG / JPG) <span class="req">*</span></label>
+      <input type="file" name="plan" id="plan" accept="image/*" required>
+    </div>
+
+    <div class="field">
+      <label for="overlay">Overlay с заливкой (опционально)</label>
+      <input type="file" name="overlay" id="overlay" accept="image/*">
+      <div class="hint">Если заливка уже на основном плане — оставьте пустым.</div>
+    </div>
+
+    <div class="field">
+      <label for="mapping">Mapping лотов (CSV / JSON, опционально)</label>
+      <input type="file" name="mapping" id="mapping" accept=".csv,.json,application/json,text/csv">
+      <div class="hint">Колонки: <code>lot_id</code>, <code>label</code>, <code>status</code>, <code>area</code>, <code>anchor_x</code>, <code>anchor_y</code>.</div>
+    </div>
+
+    <div class="field">
+      <label for="floor_id">Floor ID</label>
+      <input type="text" name="floor_id" id="floor_id" value="floor" maxlength="64">
+    </div>
+
+    <details class="advanced">
+      <summary>Расширенные параметры</summary>
+      <div class="grid">
+        <div class="field">
+          <label for="closing_kernel">Closing kernel (px)</label>
+          <input type="number" name="closing_kernel" id="closing_kernel" min="3" max="51" placeholder="15">
+        </div>
+        <div class="field">
+          <label for="simplify_tolerance">Simplify tolerance (px)</label>
+          <input type="number" name="simplify_tolerance" id="simplify_tolerance" step="0.5" min="0" placeholder="3.0">
+        </div>
+      </div>
+      <div class="checks">
+        <label><input type="checkbox" name="ocr_fallback" value="1"> OCR fallback</label>
+        <label><input type="checkbox" name="debug" value="1"> Debug-артефакты</label>
+      </div>
+    </details>
+
+    <button type="submit" class="primary">Обработать</button>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Job {{ job_id }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>Job <code>{{ job_id }}</code></h1>
+
+  <div class="status-row">
+    <span id="state-badge" class="badge badge-{{ status.state }}">{{ status.state }}</span>
+    {% if status.summary %}
+      <span class="muted">
+        lots: {{ status.summary.lots_found }} ·
+        mapped: {{ status.summary.lots_mapped }} ·
+        warnings: {{ status.summary.warnings }} ·
+        errors: {{ status.summary.errors }}
+      </span>
+    {% endif %}
+  </div>
+
+  {% if status.state == "error" %}
+    <div class="error-box">
+      <strong>Ошибка:</strong> {{ status.message }}
+    </div>
+  {% endif %}
+
+  {% if files %}
+    <h2>Файлы</h2>
+    <ul class="file-list">
+      {% for f in files %}
+        <li>
+          <a href="/jobs/{{ job_id }}/files/{{ f.name }}" target="_blank">{{ f.name }}</a>
+          <span class="muted">{{ (f.size / 1024) | round(1) }} KB</span>
+        </li>
+      {% endfor %}
+    </ul>
+
+    <div class="actions">
+      <a class="primary" href="/jobs/{{ job_id }}/download">Скачать всё (.zip)</a>
+      <a class="secondary" href="/">Новая загрузка</a>
+    </div>
+
+    {% set has_preview = files | selectattr('name', 'equalto', 'lots_preview.svg') | list | length > 0 %}
+    {% if has_preview %}
+      <h2>Preview</h2>
+      <div class="preview-wrap">
+        <object data="/jobs/{{ job_id }}/files/lots_preview.svg" type="image/svg+xml"></object>
+      </div>
+    {% endif %}
+  {% else %}
+    <p class="muted">Идёт обработка… Страница обновится автоматически.</p>
+  {% endif %}
+</section>
+
+<script>
+(function() {
+  const state = "{{ status.state }}";
+  if (state === "pending" || state === "running") {
+    const poll = async () => {
+      try {
+        const r = await fetch("/jobs/{{ job_id }}/status", {cache: "no-store"});
+        if (!r.ok) return;
+        const data = await r.json();
+        if (data.state === "done" || data.state === "error") {
+          window.location.reload();
+        }
+      } catch (e) { /* ignore */ }
+    };
+    setInterval(poll, 1500);
+  }
+})();
+</script>
+{% endblock %}
